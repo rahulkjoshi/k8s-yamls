@@ -1,0 +1,11 @@
+apiVersion: networking.gke.io/v1alpha1
+kind: FQDNNetworkPolicy
+metadata:
+  name: test
+  namespace: ns2
+spec:
+  podSelector: {}
+  egress:
+  - matches:
+    - pattern: "*.google.com"
+    - pattern: "*.yahoo.com"

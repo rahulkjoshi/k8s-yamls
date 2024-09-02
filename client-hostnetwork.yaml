@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-hostnet
+  labels:
+    app: curl-client
+    netpol: client-allow
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: curl-client
+      netpol: client-allow
+  template:
+    metadata:
+      labels:
+        app: curl-client
+        netpol: client-allow
+    spec:
+      hostNetwork: true
+      containers:
+      - name: curl
+        image: curlimages/curl:latest
+        command:
+          - "sh"
+          - "-c"
+          - >
+            while true; do
+              sleep 3600;
+            done

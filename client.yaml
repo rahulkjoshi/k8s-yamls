@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-allow
+  labels:
+    app: curl-client
+    netpol: client-allow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: curl-client
+  template:
+    metadata:
+      labels:
+        app: curl-client
+        netpol: client-allow
+        perf-job: "0"
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl:latest
+        command:
+          - "sh"
+          - "-c"
+          - >
+            while true; do
+              sleep 3600;
+            done
+      tolerations:
+      - key: "rkj-mark"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "rkj-mark"
+        operator: "Exists"
+        effect: "NoExecute"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-deny
+  labels:
+    app: curl-client
+    netpol: client-deny
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: curl-client
+      netpol: client-deny
+  template:
+    metadata:
+      labels:
+        app: curl-client
+        netpol: client-deny
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl:latest
+        command:
+          - "sh"
+          - "-c"
+          - >
+            while true; do
+              sleep 3600;
+            done
+      tolerations:
+      - key: "rkj-mark"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "rkj-mark"
+        operator: "Exists"
+        effect: "NoExecute"

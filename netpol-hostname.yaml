@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hostname-allow-client
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: hostname-server
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          netpol: client-allow
+      namespaceSelector: {}
+    # - ipBlock:
+    #     cidr: 130.211.0.0/22
+    # - ipBlock:
+    #     cidr: 35.191.0.0/16
+  policyTypes:
+  - Ingress
+

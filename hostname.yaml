@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hostname-server
+  labels:
+    app: hostname-server
+spec:
+  selector:
+    matchLabels:
+      app: hostname-server
+  template:
+    metadata:
+      labels:
+        app: hostname-server
+    spec:
+      containers:
+      - name: hostname-server
+        image: gcr.io/kubernetes-e2e-test-images/agnhost:2.8
+        args: ["porter"]
+        env:
+          - name: HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: NODE_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: SERVE_PORT_8080
+            value: "pod ip: $(POD_IP) - $(HOSTNAME) ($(NODE_IP))\n"
+          - name: SERVE_PORT_31337
+            value: ""
+          - name: SERVE_PORT_41173
+            value: ""
+        livenessProbe:
+          httpGet:
+            port: live-port
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            port: ready-port
+          periodSeconds: 60
+        ports:
+          - name: serve-8080
+            containerPort: 8080
+          - name: live-port
+            containerPort: 31337
+          - name: ready-port
+            containerPort: 41173
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hostname
+spec:
+  type: NodePort
+  ipFamilyPolicy: PreferDualStack
+  internalTrafficPolicy: Local
+  selector:
+    app: hostname-server
+  ports:
+    - name: serve-8080
+      protocol: TCP
+      nodePort: 30808
+      port: 80
+      targetPort: 8080
+    - name: ready-port
+      protocol: TCP
+      port: 41173
+      targetPort: 41173
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hostname-headless
+spec:
+  clusterIP: None
+  selector:
+    app: hostname-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+

@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: client-allow
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      netpol: client-allow
+  policyTypes:
+    - Egress
+  egress:
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          app: hostname-server
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+  - to:
+    - ipBlock:
+        cidr: 169.254.169.254/32

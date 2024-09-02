@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dnsqueries-go
+data:
+  all-queries: |
+    kubernetes.default.svc.cluster.local
+    kubernetes.default.svc.cluster.local
+    metrics-server.kube-system.svc.cluster.local
+    metrics-server.kube-system.svc.cluster.local
+    microsoft.com
+    microsoft.com
+    kube-dns.kube-system.svc.cluster.local
+    kube-dns.kube-system.svc.cluster.local
+    facebook.com
+    facebook.com
+    apple.com
+    apple.com
+    metadata.google.internal
+    metadata.google.internal
+    google.com
+    google.com
+    github.com
+    github.com
+    wikipedia.org
+    wikipedia.org
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dns-perf
+spec:
+  replicas: 9
+  selector:
+    matchLabels:
+      app: dns-perf
+  template:
+    metadata:
+      labels:
+        app: dns-perf
+        netpol: client-allow
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - dns-perf
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: dnsperf
+        image: gcr.io/k8s-staging-perf-tests/dnsperfgo:v1.3.0
+        command:
+        - "/bin/sh"
+        args:
+        - -c
+        - server=$(cat /etc/resolv.conf | grep nameserver | cut -d ' ' -f 2); echo "Using nameserver ${server}";
+          ./dnsperfcgo -duration 60s -idle-duration 10s -inputfile /etc/config/all-queries -qps 15;
+        volumeMounts:
+          - name: query-volume
+            mountPath: /etc/config
+      terminationGracePeriodSeconds: 1
+      volumes:
+      - name: query-volume
+        configMap:
+          name: dnsqueries-go

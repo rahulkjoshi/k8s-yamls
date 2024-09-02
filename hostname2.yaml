@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hostname-server-2container
+  labels:
+    app: hostname-server-2container
+spec:
+  selector:
+    matchLabels:
+      app: hostname-server-2container
+  template:
+    metadata:
+      labels:
+        app: hostname-server-2container
+    spec:
+      containers:
+      - name: hostname-server
+        image: gcr.io/kubernetes-e2e-test-images/agnhost:2.8
+        args: ["porter"]
+        env:
+          - name: HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: NODE_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: SERVE_PORT_8080
+            value: "pod ip: $(POD_IP) - $(HOSTNAME) ($(NODE_IP))\n"
+        ports:
+          - name: serve-8080
+            containerPort: 8080
+      - name: curl2
+        image: curlimages/curl:latest
+        command:
+          - "sh"
+          - "-c"
+          - >
+            while true; do
+              sleep 3600;
+            done
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hostname-2container
+spec:
+  selector:
+    app: hostname-server-2container
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+
